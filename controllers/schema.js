@@ -301,7 +301,7 @@ const Mutation = new GraphQLObjectType({
           if (!newWeight) {
             newWeight = formerArmor.weight;
           }
-          if (!newStrengthRqr) {
+          if (newStrengthRqr) {
             if (
               newStrengthRqr > 20 &&
               newStrengthRqr != formerArmor.strengthRqr
