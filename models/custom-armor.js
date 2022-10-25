@@ -8,7 +8,10 @@ const armorSchema = new Schema({
   dexBonus: String,
   stealthDis: Boolean,
   cost: Number,
-  costType: String,
+  costType: {
+    type: String,
+    enum: ["cp", "sp", "ep", "gp", "pp"],
+  },
   weight: Number,
   strengthRqr: Number,
   description: String,

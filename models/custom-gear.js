@@ -4,7 +4,10 @@ const Schema = mongoose.Schema;
 const gearSchema = new Schema({
   name: String,
   cost: Number,
-  costType: String,
+  costType: {
+    type: String,
+    enum: ["cp", "sp", "ep", "gp", "pp"],
+  },
   weight: Number,
   description: String,
 });

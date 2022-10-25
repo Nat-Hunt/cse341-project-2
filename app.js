@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const mongodb = require("./db/connect");
 
 const { graphqlHTTP } = require("express-graphql");
-const schema = require("./schema/schema");
+const schema = require("./controllers/schema");
 
 const port = process.env.PORT || 3000;
 const app = express();
@@ -16,8 +16,7 @@ app
     res.setHeader("Access-control-Allow-Origin", "*");
     next();
   })
-  // .use("/", require("./routes"))
-  .use("/graphql", graphqlHTTP({ schema, graphiql: true }));
+  .use("/", require("./routes"));
 
 mongodb.initDb((err, mongodb) => {
   if (err) {
