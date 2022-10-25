@@ -250,7 +250,7 @@ const Mutation = new GraphQLObjectType({
         "Update a single Custom Armor item. Requires the item _id, returns the former fields",
       type: ArmorType,
       args: {
-        id: { type: GraphQLID },
+        id: { type: graphql.GraphQLNonNull(GraphQLID) },
         name: { type: GraphQLString },
         armorType: { type: GraphQLString },
         ac: { type: GraphQLInt },
@@ -264,6 +264,7 @@ const Mutation = new GraphQLObjectType({
       },
       resolve: async (parent, args) => {
         try {
+          const formerArmor = await CustomArmor.findById(args.id);
           let newName = args.name;
           let newArmorType = args.armorType;
           let newAc = args.ac;
@@ -274,8 +275,6 @@ const Mutation = new GraphQLObjectType({
           let newWeight = args.weight;
           let newStrengthRqr = args.strengthRqr;
           let newDescription = args.description;
-
-          const formerArmor = await CustomArmor.findById(args.id);
 
           // validation (graphql does most of it for me)
           if (!newName) {
@@ -294,7 +293,7 @@ const Mutation = new GraphQLObjectType({
             newStealthDis = formerArmor.stealthDis;
           }
           if (!newCost) {
-            newCost = formerArmor.collection;
+            newCost = formerArmor.cost;
           }
           if (!newCostType) {
             newCostType = formerArmor.costType;
@@ -335,18 +334,18 @@ const Mutation = new GraphQLObjectType({
           }
 
           // Update the armor
-          const updatedArmor = await CustomArmor.findByIdAndUpdate(
-            newName,
-            newArmorType,
-            newAc,
-            newDexBonus,
-            newStealthDis,
-            newCost,
-            newCostType,
-            newWeight,
-            newStrengthRqr,
-            newDescription
-          );
+          const updatedArmor = await CustomArmor.findByIdAndUpdate(args.id, {
+            name: newName,
+            armorType: newArmorType,
+            ac: newAc,
+            dexBonus: newDexBonus,
+            stealthDis: newStealthDis,
+            cost: newCost,
+            costType: newCostType,
+            weight: newWeight,
+            strengthRqr: newStrengthRqr,
+            description: newDescription,
+          });
 
           return {
             ...updatedArmor._doc,
