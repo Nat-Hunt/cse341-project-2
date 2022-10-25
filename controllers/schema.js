@@ -246,6 +246,8 @@ const Mutation = new GraphQLObjectType({
       },
     },
     updateArmor: {
+      description:
+        "Update a single Custom Armor item. Requires the item _id, returns the former fields",
       type: ArmorType,
       args: {
         id: { type: GraphQLID },
@@ -273,51 +275,66 @@ const Mutation = new GraphQLObjectType({
           let newStrengthRqr = args.strengthRqr;
           let newDescription = args.description;
 
-          const formerGear = await CustomArmor.findById(args.id);
+          const formerArmor = await CustomArmor.findById(args.id);
 
           // validation (graphql does most of it for me)
           if (!newName) {
-            newName = formerGear.name;
+            newName = formerArmor.name;
           }
           if (!newArmorType) {
-            newArmorType = formerGear.armorType;
+            newArmorType = formerArmor.armorType;
           }
           if (!newAc) {
-            newAc = formerGear.ac;
+            newAc = formerArmor.ac;
           }
-
           if (!newDexBonus) {
-            newDexBonus = formerGear.dexBonus;
+            newDexBonus = formerArmor.dexBonus;
           }
-
           if (!newStealthDis) {
-            newStealthDis = formerGear.stealthDis;
+            newStealthDis = formerArmor.stealthDis;
           }
-
           if (!newCost) {
-            newCost = formerGear.collection;
+            newCost = formerArmor.collection;
           }
-
           if (!newCostType) {
-            newCostType = formerGear.costType;
+            newCostType = formerArmor.costType;
           }
-
           if (!newWeight) {
-            newWeight = formerGear.weight;
+            newWeight = formerArmor.weight;
           }
-
           if (!newStrengthRqr) {
-            if (newStrengthRqr > 20) {
+            if (
+              newStrengthRqr > 20 &&
+              newStrengthRqr != formerArmor.strengthRqr
+            ) {
               throw new Error(
                 "Error: strength requirement cannot be greater than 20"
               );
+            } else {
+              newStrengthRqr = formerArmor.strengthRqr;
             }
           }
-
           if (!newDescription) {
-            newDescription = formerGear.description;
+            newDescription = formerArmor.description;
           }
 
+          // check if fields were changed
+          if (
+            newName == formerArmor.name &&
+            newArmorType == formerArmor.armorType &&
+            newAc == formerArmor.ac &&
+            newDexBonus == formerArmor.dexBonus &&
+            newStealthDis == formerArmor.stealthDis &&
+            newCost == formerArmor.cost &&
+            newCostType == formerArmor.costType &&
+            newWeight == formerArmor.weight &&
+            newStrengthRqr == formerArmor.strengthRqr &&
+            newDesc == formerArmor.description
+          ) {
+            throw new Error("You did not change any fields");
+          }
+
+          // Update the armor
           const updatedArmor = await CustomArmor.findByIdAndUpdate(
             newName,
             newArmorType,
@@ -333,7 +350,17 @@ const Mutation = new GraphQLObjectType({
 
           return {
             ...updatedArmor._doc,
+            id: updatedArmor.id,
             name: updatedArmor.name,
+            armorType: updatedArmor.armorType,
+            ac: updatedArmor.ac,
+            dexBonus: updatedArmor.dexBonus,
+            stealthDis: updatedArmor.stealthDis,
+            cost: updatedArmor.cost,
+            costType: updatedArmor.costType,
+            weight: updatedArmor.weight,
+            strengthRqr: updatedArmor.strengthRqr,
+            description: updatedArmor.description,
           };
         } catch (err) {
           throw err;
@@ -341,6 +368,8 @@ const Mutation = new GraphQLObjectType({
       },
     },
     removeGear: {
+      description:
+        "Delete a single Custom Gear item. Requires the item _id, returns the former id",
       type: GearType,
       args: {
         id: { type: GraphQLID },
@@ -358,6 +387,8 @@ const Mutation = new GraphQLObjectType({
       },
     },
     removeArmor: {
+      description:
+        "Delete a single Custom Armor item. Requires the item _id, returns the former id",
       type: ArmorType,
       args: {
         id: { type: GraphQLID },
