@@ -1,10 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const mongodb = require("./db/connect");
-
-const { graphqlHTTP } = require("express-graphql");
-const schema = require("./controllers/schema");
+const mongodb = require("./config/connect");
 
 const port = process.env.PORT || 3000;
 const app = express();

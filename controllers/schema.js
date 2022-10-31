@@ -74,7 +74,6 @@ const RootQuery = new GraphQLObjectType({
       args: { id: { type: GraphQLID } },
       resolve: async (root, args, context, info) => {
         // check that ID is in the proper format
-
         return CustomGear.findById(args.id);
       },
     },
@@ -106,6 +105,7 @@ const RootQuery = new GraphQLObjectType({
   },
 });
 
+// CRUD operations
 const Mutation = new GraphQLObjectType({
   name: "Mutation",
   description: "Used for making CREATE, PUT, and DELETE queries.",
@@ -408,6 +408,7 @@ const Mutation = new GraphQLObjectType({
   },
 });
 
+// console.log(req.user);
 // create new schema with options query which defines the query we will allow users to use when they are making a request.
 module.exports = new GraphQLSchema({
   query: RootQuery,
