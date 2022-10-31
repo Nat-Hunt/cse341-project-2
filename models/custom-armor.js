@@ -15,7 +15,7 @@ const armorSchema = new Schema({
   weight: Number,
   strengthRqr: Number,
   description: String,
-  creator_id: { type: String, required: true },
+  creator_id: { type: String },
 });
 
 module.exports = mongoose.model("CustomArmor", armorSchema);
