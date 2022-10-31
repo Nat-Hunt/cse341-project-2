@@ -1,3 +1,5 @@
+const fetch = require("node-fetch");
+
 const appConfig = require("../config/app");
 
 const AuthorizationController = {
