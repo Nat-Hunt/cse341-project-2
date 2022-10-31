@@ -29,9 +29,7 @@ const AuthorizationController = {
     });
     const jsonResponse = await response.json();
 
-    // res.set("Authorization", `Bearer ${jsonResponse.access_token}`);
-    res.send();
-    // res.redirect(301, `${appConfig.searchUri}`);
+    res.json(jsonResponse);
   },
 };
 
