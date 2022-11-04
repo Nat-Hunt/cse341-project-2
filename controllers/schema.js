@@ -430,7 +430,7 @@ const Mutation = new GraphQLObjectType({
       args: {
         id: { type: GraphQLID },
       },
-      resolve: async (parent, args) => {
+      resolve: async (parent, args, context, info) => {
         try {
           const armor = await CustomArmor.findById(args.id);
           if (armor.creator_id != context.identifier) {
