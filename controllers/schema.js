@@ -110,13 +110,6 @@ const RootQuery = new GraphQLObjectType({
             _id: args.id,
             creator_id: context.identifier,
           });
-          if (!foundArmor.length) {
-            // if the result is null, then throw an error
-            throw new Error(
-              "Sorry, the item either doesn't exist or you don't own it"
-            );
-          }
-
           return foundArmor;
         } catch (err) {
           throw err;
