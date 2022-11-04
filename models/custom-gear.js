@@ -10,7 +10,7 @@ const gearSchema = new Schema({
   },
   weight: Number,
   description: String,
-  creator_id: { type: String },
+  creator_id: { type: String, required: true },
 });
 
 module.exports = mongoose.model("CustomGear", gearSchema);

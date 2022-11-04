@@ -1,6 +1,4 @@
 const { Schema, model } = require("mongoose");
-const CustomGear = require("./custom-gear");
-const CustomArmor = require("./custom-armor");
 
 const userSchema = new Schema({
   identifier: { type: String, unique: true, required: true },

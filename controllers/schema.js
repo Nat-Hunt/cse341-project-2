@@ -1,6 +1,8 @@
 const graphql = require("graphql");
+const { createImportSpecifier } = require("typescript");
 const CustomArmor = require("../models/custom-armor");
 const CustomGear = require("../models/custom-gear");
+const appConfig = require("../config/app");
 
 const {
   GraphQLObjectType,
@@ -47,6 +49,7 @@ const ArmorType = new GraphQLObjectType({
     weight: { type: GraphQLInt },
     strengthRqr: { type: GraphQLInt },
     description: { type: GraphQLString },
+    creator_id: { type: GraphQLString },
   }),
 });
 
@@ -59,47 +62,73 @@ const GearType = new GraphQLObjectType({
     costType: { type: CostTypeEnumType },
     weight: { type: GraphQLInt },
     description: { type: GraphQLString },
+    creator_id: { type: GraphQLString },
   }),
 });
 
 // root query to get all gear, all armor, or one gear or one armor.
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
-  description: "All GET-type queries.",
+  description:
+    "All GET-type queries. All queries require an Authorization header of type: 'Authorization: Bearer xxxx.yyyy.zzzz'",
   fields: {
     gear: {
       description:
-        "Requires the item _id of the item you're requesting, returns one item",
+        "Requires the item _id of the item you're requesting, returns one item. Returns null if no items match your account identifier",
       type: GearType,
       args: { id: { type: GraphQLID } },
       resolve: async (root, args, context, info) => {
-        // check that ID is in the proper format
-        return CustomGear.findById(args.id);
+        try {
+          // check that the item exists for the user
+          let foundGear = CustomGear.findOne({
+            _id: args.id,
+            creator_id: context.identifier,
+          });
+          return foundGear;
+        } catch (err) {
+          throw err;
+        }
       },
     },
     all_gear: {
-      description: "Returns all entries in the CustomGear collection",
+      description:
+        "Returns all entries in the CustomGear collection that the current user has created. Returns null if no items match your account identifier",
       type: new graphql.GraphQLList(GearType),
       resolve: async (root, args, context, info) => {
-        return CustomGear.find({});
+        return CustomGear.find({ creator_id: context.identifier });
       },
     },
     armor: {
       description:
-        "Requires the item _id of the item you're requesting, returns one item",
+        "Requires the item _id of the item you're requesting, returns one item. Returns null if no items match your account identifier",
       type: ArmorType,
       args: { id: { type: GraphQLID } },
       resolve: async (root, args, context, info) => {
-        // check that ID is in the proper format
+        try {
+          // check that the item exists for the user
+          let foundArmor = CustomArmor.findOne({
+            _id: args.id,
+            creator_id: context.identifier,
+          });
+          if (!foundArmor.length) {
+            // if the result is null, then throw an error
+            throw new Error(
+              "Sorry, the item either doesn't exist or you don't own it"
+            );
+          }
 
-        return CustomArmor.findById(args.id);
+          return foundArmor;
+        } catch (err) {
+          throw err;
+        }
       },
     },
     all_armor: {
-      description: "Returns all entries in the CustomArmor collection",
+      description:
+        "Returns all entries in the CustomArmor collection that the current user has created. Returns null if no items match your account identifier",
       type: new graphql.GraphQLList(ArmorType),
       resolve: async (root, args, context, info) => {
-        return CustomArmor.find({});
+        return CustomArmor.find({ creator_id: context.identifier });
       },
     },
   },
@@ -108,7 +137,8 @@ const RootQuery = new GraphQLObjectType({
 // CRUD operations
 const Mutation = new GraphQLObjectType({
   name: "Mutation",
-  description: "Used for making CREATE, PUT, and DELETE queries.",
+  description:
+    "Used for making CREATE, PUT, and DELETE queries. All queries require an Authorization header of type: 'Authorization: Bearer xxxx.yyyy.zzzz'",
   fields: {
     addGear: {
       description:
@@ -129,6 +159,7 @@ const Mutation = new GraphQLObjectType({
             costType: args.costType,
             weight: args.weight,
             description: args.description,
+            creator_id: context.identifier,
           });
           const newGear = await gear.save();
           return { ...newGear._doc, _id: newGear.id };
@@ -166,6 +197,7 @@ const Mutation = new GraphQLObjectType({
             weight: args.weight,
             strengthRqr: args.strengthRqr,
             description: args.description,
+            creator_id: context.identifier,
           });
           const newArmor = await armor.save();
           return { ...newArmor._doc, _id: newArmor.id };
@@ -176,7 +208,7 @@ const Mutation = new GraphQLObjectType({
     },
     updateGear: {
       description:
-        "Update a single Custom Gear item. Requires the item _id, returns the former fields",
+        "Update a single Custom Gear item. Requires the item _id, returns the former fields. Throws an error if the item does not match your account identifier",
       type: GearType,
       args: {
         id: { type: graphql.GraphQLNonNull(GraphQLID) },
@@ -186,9 +218,13 @@ const Mutation = new GraphQLObjectType({
         weight: { type: GraphQLInt },
         description: { type: GraphQLString },
       },
-      resolve: async (parent, args) => {
+      resolve: async (parent, args, context, info) => {
         try {
           const formerGear = await CustomGear.findById(args.id);
+          if (formerGear.creator_id != context.identifier) {
+            throw new Error("The item you have entered cannot be altered");
+          }
+
           let newName = args.name;
           let newCost = args.cost;
           let newCostType = args.costType;
@@ -247,7 +283,7 @@ const Mutation = new GraphQLObjectType({
     },
     updateArmor: {
       description:
-        "Update a single Custom Armor item. Requires the item _id, returns the former fields",
+        "Update a single Custom Armor item. Requires the item _id, returns the former fields. Throws an error if the item does not match your account identifier",
       type: ArmorType,
       args: {
         id: { type: graphql.GraphQLNonNull(GraphQLID) },
@@ -262,9 +298,13 @@ const Mutation = new GraphQLObjectType({
         strengthRqr: { type: GraphQLInt },
         description: { type: GraphQLString },
       },
-      resolve: async (parent, args) => {
+      resolve: async (parent, args, context, info) => {
         try {
           const formerArmor = await CustomArmor.findById(args.id);
+          if (formerArmor.creator_id != context.identifier) {
+            throw new Error("The item you have entered cannot be altered");
+          }
+
           let newName = args.name;
           let newArmorType = args.armorType;
           let newAc = args.ac;
@@ -368,14 +408,19 @@ const Mutation = new GraphQLObjectType({
     },
     removeGear: {
       description:
-        "Delete a single Custom Gear item. Requires the item _id, returns the former id",
+        "Delete a single Custom Gear item. Requires the item _id, returns the former id. Throws an error if the item does not match your account identifier",
       type: GearType,
       args: {
         id: { type: GraphQLID },
       },
-      resolve: async (parent, args) => {
+      resolve: async (parent, args, context, info) => {
         try {
+          const gear = await CustomGear.findById(args.id);
+          if (gear.creator_id != context.identifier) {
+            throw new Error("The item you have entered cannot be deleted");
+          }
           const deletedGear = await CustomGear.findByIdAndDelete(args.id);
+
           return {
             ...deletedGear._doc,
             _id: deletedGear.id,
@@ -387,13 +432,18 @@ const Mutation = new GraphQLObjectType({
     },
     removeArmor: {
       description:
-        "Delete a single Custom Armor item. Requires the item _id, returns the former id",
+        "Delete a single Custom Armor item. Requires the item _id, returns the former id. Throws an error if the item does not match your account identifier",
       type: ArmorType,
       args: {
         id: { type: GraphQLID },
       },
       resolve: async (parent, args) => {
         try {
+          const armor = await CustomArmor.findById(args.id);
+          if (armor.creator_id != context.identifier) {
+            throw new Error("The item you have entered cannot be deleted");
+          }
+
           const deletedArmor = await CustomArmor.findByIdAndDelete(args.id);
           return {
             ...deletedArmor._doc,
@@ -408,7 +458,6 @@ const Mutation = new GraphQLObjectType({
   },
 });
 
-// console.log(req.user);
 // create new schema with options query which defines the query we will allow users to use when they are making a request.
 module.exports = new GraphQLSchema({
   query: RootQuery,
